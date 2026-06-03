@@ -1,0 +1,9 @@
+services:
+  quant-lab-api:
+    build: .
+    container_name: quant-lab-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

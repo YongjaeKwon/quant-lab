@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>quant-lab dashboard</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">공개용 퀀트 백엔드 쇼케이스</p>
+        <h1>quant-lab</h1>
+        <p>
+          인증, 백테스트 실행, WebSocket 이벤트 수신 흐름을 한 화면에서 확인합니다.
+          실제 전략과 투자 데이터는 포함하지 않습니다.
+        </p>
+      </section>
+
+      <section class="grid">
+        <form id="login-form" class="panel">
+          <h2>1. 로그인</h2>
+          <label>
+            아이디
+            <input id="username" value="demo" />
+          </label>
+          <label>
+            비밀번호
+            <input id="password" type="password" value="demo-pass" />
+          </label>
+          <button type="submit">토큰 발급</button>
+          <p id="login-status" class="status">대기 중</p>
+        </form>
+
+        <form id="backtest-form" class="panel">
+          <h2>2. 백테스트 실행</h2>
+          <label>
+            심볼
+            <input id="symbol" value="DEMO-BTC" />
+          </label>
+          <label>
+            시작 금액
+            <input id="start-cash" type="number" value="10000" />
+          </label>
+          <button type="submit">실행</button>
+          <p id="backtest-status" class="status">로그인 후 실행할 수 있습니다.</p>
+        </form>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>결과</h2>
+          <pre id="result">{}</pre>
+        </article>
+        <article class="panel">
+          <h2>실시간 이벤트</h2>
+          <pre id="events">WebSocket 연결 대기 중</pre>
+        </article>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
