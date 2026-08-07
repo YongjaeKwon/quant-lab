@@ -1,20 +1,32 @@
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 .venv/
 venv/
+
+# Generated demo data
+data/
+
+# Frontend
+console/web/node_modules/
+console/web/dist/
+console/web/coverage/
+*.tsbuildinfo
+
+# Environment and local secrets
 .env
 .env.*
-!.env.example
-dist/
-build/
-node_modules/
-logs/
-data/
-*.db
-*.sqlite
-*.csv
-*.parquet
+
+# Editors and operating systems
+.idea/
+.vscode/
 .DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,10 @@
+{
+  "name": "ReachRich Public Lab",
+  "short_name": "ReachRich Lab",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d111b",
+  "theme_color": "#0d111b",
+  "lang": "ko",
+  "description": "합성 데이터로 재구성한 ReachRich 공개 기술 데모"
+}
