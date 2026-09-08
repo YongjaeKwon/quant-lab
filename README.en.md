@@ -1,28 +1,46 @@
 # ReachRich Public Lab
 
-**Data validation and read API demo** · Python / FastAPI / SQLite / Parquet / React / TypeScript
+**A data validation and read API demo for repeated runs and failure states**
 
 [한국어](README.md) | English · [CI](https://github.com/YongjaeKwon/quant-lab/actions/workflows/tests.yml)
 
-A personal project that stores synthetic account and price data locally and exposes it through an API and dashboard. It focuses on data consistency across repeated runs, invalid input handling, and loading, error, and empty states. All symbols and amounts are synthetic.
+I want repeated saves to leave no duplicate records and failed reads to be visible in the UI. This project explores three questions: what happens when the same data is saved twice, where invalid input should be rejected, and what the user should see when there is no result.
 
-## Implementation and evidence
+It generates synthetic account and price data, stores it locally, and exposes it through an API and React dashboard. All symbols and amounts are synthetic, and the project can be run and tested locally.
 
-| Problem | Implementation | Tests to inspect |
+`Python` · `FastAPI` · `SQLite` · `Parquet` · `React` · `TypeScript`
+
+## Decisions behind the implementation
+
+### Update records for the same date without duplicates
+
+Updating an account summary while retaining its old holdings can mix values from different snapshots. I replace the summary and holdings together in one transaction when saving the same date. Price files also update existing values by date, so repeated runs do not add duplicate rows.
+
+Tests check the result of replacing a day's holdings and of running the entire data preparation pipeline twice with the same cutoff date.
+
+### Reject invalid input and account for file write failures
+
+Before saving price data, the pipeline checks date order, duplicates, dates beyond the cutoff, and relationships between prices. Input that fails validation does not reach the storage step.
+
+Parquet files are written to a temporary path before replacing the existing file. A test simulates a failure during writing and checks that the previous file remains intact.
+
+### Distinguish missing data from failed reads
+
+Data preparation and HTTP reads have separate roles. The API reads local account snapshots and the pipeline status report without collecting external data. Missing results and damaged storage files produce different responses.
+
+The UI also distinguishes loading, error, and empty states. Interval requests pause while the tab is hidden, and data refreshes when it becomes visible again. Tests cover API responses, rendered states, and tab visibility changes separately.
+
+## Explore the code and tests
+
+| Area | Implementation | Tests |
 | --- | --- | --- |
-| Repeated saves leave duplicate or stale holdings | [SQLite snapshots](datastore/snapshot_store.py): replace the summary and holdings in one transaction | [Same-date replacement and duplicate input rejection](tests/test_snapshot_store.py) |
-| Price file updates introduce duplicates or fail during writing | [Parquet store](datastore/candle_store.py): date-keyed upserts and replacement after writing a temporary file | [Updates and preservation of the previous file on write failure](tests/test_candle_store.py) |
-| Invalid time-series input | [Candle validation](validation/time_series.py): ordering, duplicate dates, dates beyond the cutoff, and price relationships | [Rejection by error type](tests/test_validation.py) |
-| Missing results or damaged storage files | [FastAPI](console/api.py): local reads with explicit empty, 404, and 503 responses | [Empty data, corrupt files, and bounded history queries](tests/test_api.py) |
-| Pending or failed requests, empty results, and tab changes | [React view](console/web/src/App.tsx) and [polling hook](console/web/src/hooks/usePolling.ts): state-specific rendering and paused interval requests in hidden tabs | [UI states](console/web/src/App.test.tsx) · [Tab visibility](console/web/src/hooks/usePolling.test.tsx) |
+| Replace records for the same date | [SQLite store](datastore/snapshot_store.py) | [Snapshot replacement](tests/test_snapshot_store.py) · [Repeated pipeline runs](tests/test_demo_pipeline.py) |
+| Validate input and update files | [Time-series validation](validation/time_series.py) · [Parquet store](datastore/candle_store.py) | [Invalid input](tests/test_validation.py) · [Write failures](tests/test_candle_store.py) |
+| Handle read results and UI states | [API](console/api.py) · [React view](console/web/src/App.tsx) · [Polling](console/web/src/hooks/usePolling.ts) | [API responses](tests/test_api.py) · [UI states](console/web/src/App.test.tsx) · [Tab visibility](console/web/src/hooks/usePolling.test.tsx) |
 
-## Structure and tradeoffs
+Start with the [data preparation pipeline](operation/demo_pipeline.py) for the overall flow. The [architecture](docs/ARCHITECTURE.md) and [data integrity notes](docs/DATA_INTEGRITY.md) describe the design and its scope in more detail (Korean).
 
-The [data preparation pipeline](operation/demo_pipeline.py) generates synthetic fixtures. Account snapshots go into SQLite; validated price data goes into Parquet. The API reads account snapshots and the pipeline status report, which React displays. HTTP read handlers do not collect data from external services.
-
-The project uses a small local setup to demonstrate SQLite transactions and date-keyed Parquet updates. Production deployment and concurrent writers are outside its tested scope. Brokerage integrations, order placement, and investment strategies are not included.
-
-## Run locally
+## Run and verify locally
 
 PowerShell example using Python 3.12 and Node.js 22.12 or later. Run from the repository root.
 
@@ -34,11 +52,8 @@ npm.cmd run build --prefix console/web
 .\.venv\Scripts\python.exe -m scripts.dashboard
 ```
 
-[Dashboard](http://127.0.0.1:8720) · [API documentation](http://127.0.0.1:8720/docs)
-
-The launcher seeds demo data using the current date and starts the server on localhost. For frontend development, keep the API running and execute `npm.cmd run dev --prefix console/web` in a second terminal.
-
-## Verification
+The launcher seeds demo data using the current date and starts the server on localhost.
+Open the [dashboard](http://127.0.0.1:8720) or [API documentation](http://127.0.0.1:8720/docs) to explore it.
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
@@ -46,6 +61,4 @@ npm.cmd test --prefix console/web
 npm.cmd run build --prefix console/web
 ```
 
-The [pipeline test](tests/test_demo_pipeline.py) seeds the same cutoff date twice and checks that snapshot, candle, and FX row counts remain unchanged. The [backend test fixture](tests/conftest.py) blocks outbound network connections. [GitHub Actions](.github/workflows/tests.yml) runs Python tests, repeated seeding and a health check, frontend tests, and the production build.
-
-Further reading (Korean): [Architecture](docs/ARCHITECTURE.md) · [Data integrity](docs/DATA_INTEGRITY.md) · [Run and verification commands](docs/OPERATIONS.md)
+[GitHub Actions](.github/workflows/tests.yml) also runs Python tests, repeated seeding and a health check, frontend tests, and the production build. See the [running guide](docs/OPERATIONS.md) for development mode and individual verification commands (Korean).
